@@ -21,9 +21,9 @@ Table3 has rate, which cases per population – this can be separated into two c
 Table 4a contains the cases for 1999 and 2000 and table 4b contains the population for both years. You would join on the country to obtain the views on both
 
 1. 
-```Tidy_table2 <- spread (table2, type, count)
-Tidy_table2 %>%
-	Mutate(rate = cases/population * 10000)```
+```Tidy_table2 <- spread (table2, type, count)```
+```Tidy_table2 %>%```
+```Mutate(rate = cases/population * 10000)```
 
 ```tidy_table4a <- gather(table4a, year, cases, `1999`, `2000`)
 tidy_table4b <- gather(table4b, year, population, `1999`, `2000`)
