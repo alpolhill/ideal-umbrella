@@ -1,0 +1,160 @@
+---
+title: "Week 2"
+author: "Alex Polhill"
+date: "October 8, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+
+## 12.2.1 Exercises
+1. Table1. Table one is a tidy data set with unique variables across the top and variables down the side
+Table2 has one variable that needs to be spread – “type” – it has both cases and population contained within
+Table3 has rate, which cases per population – this can be separated into two columns
+Table 4a contains the cases for 1999 and 2000 and table 4b contains the population for both years. You would join on the country to obtain the views on both
+
+1. 
+```Tidy_table2 <- spread (table2, type, count)
+Tidy_table2 %>%
+	Mutate(rate = cases/population * 10000)```
+
+```tidy_table4a <- gather(table4a, year, cases, `1999`, `2000`)
+tidy_table4b <- gather(table4b, year, population, `1999`, `2000`)
+
+tidy_table4a %>%
+  left_join(tidy_table4b, by = "country", "year")``` 
+  
+  But this one isn't quite correct. I think the first one is easier because they are all in one table and ready to go. The second takes a lot more manipulating.
+
+1. ```table2
+tidy_table2 %>%
+  mutate(rate = cases / population * 10000)
+tidy_table2 %>%
+  count(year, wt = cases)
+ggplot(tidy_table2, aes(year, cases)) +
+  geom_line(aes(group=country), color = "grey50") +
+  geom_point(aes(color=country))```
+  I had to tidy the data before I was able to put it into the ggplot
+
+## 12.3.3 Exercises
+
+1. ```gather()``` and ```spread()``` are not perfecty symmetrical because column information was not transferred between them. In cases like these, you will need to do both functions. The convert argument converts characters to the correct type
+1. The code fails because the column names are numbers and thus need to be wrapped in backticks 
+1. Spreading that tibble would fail because it looks like there are two Phillip Woods, or at least two different entries for his age
+1. To tidy this dataset, I would gather the male and female columns into one. 
+```gather(preg, gender, male, female)```
+
+## 12.4.3 Exercises
+1. ```extra``` controls what happens if there are too many pieces in a character vector: warn, drop, merge. ```fill``` controls what happens if there are not enough pieces in a character vector: warn, right, left.
+1. In ```unite()``` and ```separate()```, ```remove``` removes input columns from output data. You might want to set it to false to still see your original data set, perhaps to check your output.
+1. ```extract``` uses a regular expression to find groups and split into columns. In unite it is unambigous since it is many columns to one, and once the columns are specified, there is only one way to do it. In separate, it is one to many, and there are multiple ways to split the character string.
+
+## 12.5.1 Exercises
+1. In ```spread()```, the ```fill``` argument explicitly sets the value to replace NAs. In ```complete()```, the fill argument also sets a value to replace NAs but it is named list, allowing for different values for different variables. Both cases replace both implicit and explicit missing values.
+1. It tells it where it should look - ```up``` for the previous filled valued or ```down``` for the next filled value
+
+## 12.6.1 Exercises
+1. It may be reasonable to set na.rm to true, if you know a good amount about the data collection and validation process. There are zeros in the dataset, which could imply that NA truly means no data
+1. If you neglect that step, you wouldnt be able to omit that column as you tidy the data
+1. using this code:
+  ```select(who3, country, iso2, iso3) %>%
+      distinct() %>%
+      group_by(country) %>%
+      filter(n() > 1)```
+    you are able to see that there are no groups that are mismatched
+1. ```who5 %>%
+  group_by(country, year, sex) %>%
+  filter(year > 1995) %>%
+  summarise(cases = sum(cases)) %>%
+  unite(country_sex, country, sex, remove = FALSE) %>%
+  ggplot(aes(x = year, y = cases, group = country_sex, colour = sex)) +
+  geom_line()```
+  
+## 13.2.1 Exercises
+
+1. The variables I would need to draw the route each plane flies from its origin to its destination would be:
+*tailnumber - planes
+*origin - airports
+*destination - airports
+1. Airports and weather connect between origin
+1. It would also need to define the airport codes, which would connect it to airports through the faa codes
+1. I would display it by the number of flights on each day, maybe split out by each airport?
+
+## 13.3.1
+
+1. ```flights %>% 
+  arrange(year, month, day, sched_dep_time, carrier, flight) %>%
+  mutate(flight_id = row_number())```
+1. The primary key for ```Lahman::Batting``` is ```playerID```, ```yearID```, ```stint```. It is not simply playerID, yearID because players can have different stints in different leagues within the same year.
+  The primary key for ```babynames``` is ```year, sex, name``` since there can be babies with the different genders that have the same name
+  The primary key for ```nasaweather``` is where and when they took the data - lat, long, year and month
+  The primary key for fueleconomy is id
+  I am unsure of the primary key for the diamonds data set
+
+## 13.4.6
+
+1. 
+```avg_dest_delays <-
+  flights %>%
+  group_by(dest) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE)) %>%
+  inner_join(airports, by = c(dest = "faa"))
+
+avg_dest_delays %>%
+  ggplot(aes(lon, lat, colour = delay)) +
+  borders("state") +
+  geom_point() +
+  coord_quickmap()```
+
+1. 
+```flights %>%
+  left_join(airports, by = c(dest = "faa")) %>%
+  left_join(airports, by = c(origin = "faa")) %>%
+  head()```
+
+1.  No, if anything, it seems like the opposite is at play
+1. Any sort of precipitation is associated with a delay
+1. 
+```flights %>%
+  filter(year == 2013, month == 6, day == 13) %>%
+  group_by(dest) %>%
+  summarise(delay = mean(arr_delay, na.rm = TRUE)) %>%
+  inner_join(airports, by = c("dest" = "faa")) %>%
+  ggplot(aes(y = lat, x = lon, size = delay, colour = delay)) +
+  borders("state") +
+  geom_point() +
+  coord_quickmap() + 
+  scale_color_viridis()```
+  There was a large set of storms in the southeast
+
+## 13.5.1 Exercises
+
+1. American Airlines (AA) and Envoy Airlines (MQ) apparently don't report all of their tailnumbers
+1. 
+```planes_100 <- 
+  filter(flights) %>%
+  group_by(tailnum) %>%
+  count() %>%
+  filter(n > 100)
+  flights %>%
+  semi_join(planes_100, by = "tailnum")```
+1. 
+```fueleconomy::vehicles %>%
+  semi_join(fueleconomy::common, by = c("make", "model"))```
+1. ```anti_join(flights, airports, by = c("dest" = "faa"))``` are flights that go to an airport that does not have an faa code
+
+```anti_join(airports, flights, by = c("faa" = "dest"))``` are US airports that don’t have a flight in the data, there were no flights to that aiport from New York in 2013.
+1. There isnt necessarily a relationship like this because planes and airlines are bought and sold. 
+```flights %>%
+  group_by(tailnum, carrier) %>%
+  count() %>%
+  filter(n() > 1) %>%
+  select(tailnum) %>%
+  distinct()```
