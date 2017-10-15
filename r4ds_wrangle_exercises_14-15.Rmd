@@ -1,0 +1,164 @@
+# Alex Polhill 
+## Data Science Accelerator Week 4
+
+## 14.2.5
+
+1. Both ```paste()``` and ```paste0()``` concatenate vectors after converting to character, it seems that ```paste0()``` does it more efficiently.
+1. The ```sep``` argument will insert a seperator between the two variables you want to concatenate, but will still return separate strings. The ```collapse``` argument will still insert a seperator, but then will collapse the whole thing into one string.
+1. ```x <- c("abc", "abcd", "abcde")```
+  ```y <- str_length(x)```
+  ```z <- ceiling(y / 2)```
+  ```str_sub(x, z, z)```
+  I used this function to extract the middle character from the string. I chose to just have to take the length over 2 if the length is an even number.
+1. ```str_wrap()``` breaks text paragraphs into lines of a declared width
+1. ```str_trim()``` trims whitespace from the start and end of a string. ```str_pad()``` would be the opposite, to add whitespace
+1. ```str_commasep <- function(x, sep = ", ", last = ", and ") {
+  if(length(x) > 1) {
+    str_c(str_c(x[-length(x)], collapse = sep),
+                x[length(x)],
+                  sep = last)
+  } else {
+    x
+  }
+}```
+  ```str_commasep("")```
+  ```str_commasep("a")```
+  ```str_commasep(c("a", "b"))```
+  ```str_commasep(c("a", "b", "c"))```
+
+## 14.3.1.1
+
+1. ```\``` will escape the next character
+  ```\\``` will escape the next ```\```, which would then escape the next character
+  ```\\\``` the first two will act as a real backslash, then the third will escape the next character, so it will escape and escaped character
+1.
+1.
+
+## 14.3.2.1
+
+1. ```str_view_all(c("$^$", "aa$^$aa"), "^\\$\\^\\$")```
+1.
+```
+str_view(stringr::words, "^y", match = TRUE)
+str_view(stringr::words, "x$", match = TRUe)
+str_view(stringr::words, "^...$", match = TRUE)
+str_view(stringr::words, ".......", match = TRUE)
+```
+
+## 14.3.3.1
+
+1. 
+```
+  vowel_start <- str_view(words, "^[aeiou]", match = TRUE)
+  consonants <- str_view(words, "^[^aeiou]+$", match = TRUE)
+  ednoteed <- str_view(words, "^ed$|[^e]ed$", match = TRUE)
+  ingise <- str_view(words, "ise$|ing$", match = TRUE)
+```
+
+1. 
+```
+  ibeforee <- str_view(words, "ie|cei", match = TRUE)
+  ebeforei <- str_view(words, "[^c]ei", match = TRUE)
+```
+
+  Using these two expressions, you can see that there are times (long a) where e comes before i, and it does not follow c.
+  
+1. ```str_view(words, "q[^u]", match = TRUE)```
+  In this set of words, yes.
+1. ```str_view(words, "our$|ise$|yse$", match = TRUE)``` This is a really rough way to do it, but given that British English sometimes ends words in -our (colour, honour) -ise and -yse, this would be a start to figuring out which words are written in British English versus American English.
+1. 
+
+```
+  phonenumbers <- c("999-999-9999", "99999-99999", "99-99-99-99-99")
+  str_view(phonenumbers, "\\d\\d\\d-\\d\\d\\d-\\d\\d\\d\\d")
+```
+
+
+## 14.3.5.1
+
+I know these weren't assigned to us, but I dont understand these questions at all
+
+## 14.4.2
+
+1. 
+
+```
+str_view(words, "^x|x$", match = TRUE)
+    df %>%
+    filter(str_detect(words, "^x|x$"))
+```
+
+```
+str_view(words, "^[aeiou].*[^aeiou]$", match = TRUE)
+```
+
+```
+  vowel_start <- str_detect(words, "^[aeiou]")
+  end_with_consonant <- str_detect(words, "[^aeiou]$")
+  words[vowel_start & end_with_consonant]
+```
+  
+ 
+  
+1.
+
+```
+  vowels <- str_count(words, "[aeiou]") / str_length(words)
+  words[which(vowels == max(vowels))]```
+```
+
+## 14.4.6.1
+
+1. ```x <- "apples, pears, and bananas"```
+  ```str_split(x, boundary("word"))[[1]]```
+1. It is better to split by ```boundary("word")``` than ```" "``` because sometimes extra spaces are inserted into text for various reasons, but when you use the ```boundary("word")```, all it looks for is the word separator.
+1. It splits every character, because you have not specified anything in particular for it to look for, so it looks for everything, in essence.
+
+## 15.4.1
+
+1. Using ```summary(gss_cat[["tvhours"]])```, you can see there is a big difference between the mean and the median (mean = 2.981, median = 2.0). This would indicate there are outliers on the higher end of the spectrum. Depending on the statistic you are looking for, you might want either, but generally, with this type of data, median is generally the better indicator of average because it negates the outliers.
+
+1. There are six variables that are factors in this dataset : marital, race, rincome, partyid, relig, denom. 
+  Marital: somewhat principaled, I wouldn't reorder this one
+  Race: Arbitrary
+  Rincome: Principaled
+  PartyID: Principaled
+  Relig: Arbitrary
+  Denom: Arbitrary
+
+1. I'm honestly not sure.
+
+## 15.5.1
+
+1.
+
+```
+x3 <- gss_cat %>%
+  mutate(partyid = fct_collapse(partyid,
+                other = c("No answer", "Don't know", "Other party"),
+                rep = c("Strong republican", "Not str republican"),
+                ind = c("Ind,near rep", "Ind,near dem", "Independent"),
+                dem = c("Not str democrat", "Strong democrat")
+                )) %>%
+  count(year, partyid) %>%
+  group_by(year) %>%
+  mutate(prop = n / sum(n))
+
+ggplot(x3, aes(year, prop, color = fct_reorder2(partyid, year, prop))) +
+  geom_line(lwd = 2)
+```
+
+You can see the biggest inflections around election years, but generally, independents have the highest proportion of the volume, with democrats just below them.
+
+1.
+
+```
+rincome_groups <- gss_cat %>%
+  mutate(rincome = fct_collapse(rincome,
+    Unknown = c("No answer", "Don't know", "Refused", "Not applicable"),
+    '$1000 to $5999' = c("$1000 to 2999", "$3000 to 3999", "$4000 to 4999", "$5000 to 5999"),
+    '$6000 to $9999' = c("$6000 to 6999", "$7000 to 7999", "$8000 to 9999"),
+    '$10000 to 19999' = c("$10000 - 14999", "$15000 - 19999"),
+    '$20000 or More' = c("$20000 - 24999", "$25000 or more")
+  ))
+```
