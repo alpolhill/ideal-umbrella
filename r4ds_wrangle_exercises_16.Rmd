@@ -1,0 +1,165 @@
+---
+title: "Untitled"
+author: "Alex Polhill"
+date: "October 19, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+``` {r, include = FALSE}
+library(tidyverse)
+library(lubridate)
+library(nycflights13)
+make_datetime_100 <- function(year, month, day, time) {
+  make_datetime(year, month, day, time %/% 100, time %% 100)
+}
+flights_dt <- flights %>% 
+  filter(!is.na(dep_time), !is.na(arr_time)) %>%
+  mutate(
+    dep_time = make_datetime_100(year, month, day, dep_time),
+    arr_time = make_datetime_100(year, month, day, arr_time),
+    sched_dep_time = make_datetime_100(year, month, day, sched_dep_time),
+    sched_arr_time = make_datetime_100(year, month, day, sched_arr_time)
+  )
+```
+
+## 16.2.4 Exercises
+
+1. 
+```{r}
+ymd(c("2010-10-10", "bananas"))
+```
+This will turn the first string into a date, but not the second one, which has no numbers for it to work with.
+
+1. the tzone argument in ```today()``` specifies which time zone you want the current date of. Otherwise, it defaults to the time zone of your computer.
+
+1. 
+``` {r}
+d1 <- "January 1, 2010"
+d2 <- "2015-Mar-07"
+d3 <- "06-Jun-2017"
+d4 <- c("August 19 (2015)", "July 1 (2015)")
+d5 <- "12/30/14" # Dec 30, 2014
+
+mdy(d1)
+ymd(d2)
+dmy(d3)
+mdy(d4)
+mdy(d5)
+```
+
+## 16.3.4 Exercises
+
+1.
+``` {r}
+flights_dt %>%
+  mutate(time = hour(dep_time) * 100 + minute(dep_time),
+         mon = as.factor(month(dep_time))) %>%
+  ggplot(aes(x = time, group = mon, color = mon)) +
+  geom_freqpoly(binwidth = 100)
+```
+
+There doesnt seem to be much of a change in flight times throughout the year, at least when viewed by month
+
+1.
+Hypothetically, if they are consistent and true, then ```dep_time = sched_dep_time + dep_delay```
+
+```{r}
+flights_dt %>%
+  mutate(dep_time_ = sched_dep_time + dep_delay * 60) %>%
+  filter(dep_time_ != dep_time) %>%
+  select(dep_time_, dep_time, sched_dep_time, dep_delay)
+```
+With this, you can see that there are discrepancies with the times and delays.
+
+1.
+```{r}
+flights_dt %>%
+  mutate(flight_duration = as.numeric(arr_time - dep_time),
+         air_time_mins = air_time,
+         diff = flight_duration - air_time_mins) %>%
+  select(origin, dest, flight_duration, air_time_mins, diff)
+```
+Maybe this has something to do with time difference or taxing to the gate?
+
+1.```sched_dep_time``` is the more relevant metric, as there is no inherent bias in the data.
+```{r}
+flights_dt %>%
+  mutate(sched_dep_hour = hour(sched_dep_time)) %>%
+  group_by(sched_dep_hour) %>%
+  summarise(dep_delay = mean(dep_delay)) %>%
+  ggplot(aes(y = dep_delay, x = sched_dep_hour)) +
+  geom_point() +
+  geom_smooth()
+```
+This shows that flights are typically more delayed in the second half of the day
+
+1. 
+```{r}
+flights_dt %>%
+  mutate(dayofweek = wday(sched_dep_time)) %>%
+  group_by(dayofweek) %>%
+  summarise(dep_delay = mean(dep_delay)) %>%
+  ggplot(aes(y = dep_delay, x = dayofweek)) +
+  geom_point() +
+  geom_smooth()
+```
+Sunday has the lowest average departure delays
+
+1. 
+```{r}
+ggplot(diamonds, aes(x = carat)) + 
+  geom_density()
+ggplot(diamonds, aes(x = carat %% 1 * 100)) +
+  geom_histogram(binwidth = 1)
+```
+In both of these sets, there are nice easy numbers to work with.
+
+1. 
+```{r}
+flights_dt %>%
+  mutate(early = dep_delay < 0,
+         minute = minute(sched_dep_time)) %>%
+  group_by(minute) %>%
+  summarise(
+    early = mean(early)) %>%
+  ggplot(aes(x = minute, y = early)) +
+  geom_point()
+```
+If you look at it like this, there isn't much to notice, so I grouped it by ten minutes:
+```{r}
+flights_dt %>%
+  mutate(early = dep_delay < 0,
+         minute = minute(sched_dep_time) %% 10) %>%
+  group_by(minute) %>%
+  summarise(
+    early = mean(early)) %>%
+  ggplot(aes(x = minute, y = early)) +
+  geom_point()
+```
+Here, you can see that more are grouped around minutes 20-30 and 50-60
+
+## Exercises 16.4.5
+
+1. I assume because months have different days, so you could not, for example, compare the last day of the month when it is the 31st for July but the 28th for February.
+
+1. ```overnight``` is a boolen (TRUE or FALSE) value, so if it is an overnight flight, then it becomes one day. If not, it is 0 days.
+
+1.
+```{r}
+floor_date(today(), unit = "year") + months(0:11)
+```
+
+1. 
+```{r}
+age <- function(bday) {
+  (bday %--% today()) %/% years(1)
+}
+age(ymd("1989-09-22"))
+```
+
+1. I don't know. It says there is an unexpected character every time. I think it's because it is not really a span of time?
